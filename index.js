@@ -76,7 +76,7 @@ async function handleEvent(event) {
     const messageArr = message.split(' ');
 
     if (messageArr.length !== 3) {
-      // return client.replyMessage(event.replyToken, "Invalid message format");
+      return client.replyMessage(event.replyToken, "Invalid message format");
     }
 
     const [user, category, amount] = messageArr;
