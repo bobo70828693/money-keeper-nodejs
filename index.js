@@ -5,7 +5,7 @@ const path = require('path');
 // load env
 require('dotenv').config({ path: path.join(__dirname, '.env') });
 
-const { LINE_BOT_CHANNEL_SECRET, LINE_BOT_ACCESS_TOKEN, GOOGLE_DOC_ID } = process.env;
+const { LINE_BOT_CHANNEL_SECRET, LINE_BOT_ACCESS_TOKEN, GOOGLE_DOC_ID, DEBUG } = process.env;
 
 // third-party
 const express = require('express');
@@ -35,7 +35,6 @@ const client = new line.messagingApi.MessagingApiClient({
 app.post('/callback', line.middleware(config), (req, res) => {
   // req.body.events should be an array of events
   const events = req.body.events;
-  console.log("EVENTS", events);
 
   Promise
     .all(events.map(handleEvent))
@@ -50,7 +49,6 @@ app.post('/callback', line.middleware(config), (req, res) => {
 });
 
 async function handleEvent(event) {
-
   if (event.type === 'message' && event.message.type === 'text') {
     // get google doc
     let googleDoc = await getDocInfo(GOOGLE_DOC_ID);
@@ -76,10 +74,42 @@ async function handleEvent(event) {
     const messageArr = message.split(' ');
 
     if (messageArr.length !== 3) {
-      return client.replyMessage(event.replyToken, "Invalid message format");
+      if (DEBUG) {
+        console.log("DEBUG MODE: Invalid message format. Please follow this format: [user] [category] [amount]");
+        return;
+      }
+
+      // only reply in production
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'Invalid message format. Please follow this format: [user] [category] [amount]'
+          }
+        ]
+      });
     }
 
     const [user, category, amount] = messageArr;
+
+    // validate amount
+    if (isNaN(amount)) {
+      if (DEBUG) {
+        console.log("DEBUG MODE: Invalid amount. Please enter a number.");
+        return;
+      }
+
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: 'Invalid amount. Please enter a number.'
+          }
+        ]
+      });
+    }
 
     // add row
     await sheet.addRow({
