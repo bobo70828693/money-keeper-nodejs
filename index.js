@@ -9,7 +9,7 @@ const { LINE_BOT_CHANNEL_SECRET, LINE_BOT_ACCESS_TOKEN, GOOGLE_DOC_ID, DEBUG } =
 
 // third-party
 const express = require('express');
-const moment = require('moment');
+const moment = require('moment-timezone');
 const bodyParser = require('body-parser');
 
 // services
@@ -54,7 +54,7 @@ async function handleEvent(event) {
     let googleDoc = await getDocInfo(GOOGLE_DOC_ID);
 
     // get month's sheet
-    const month = moment().format('YYYY-MM');
+    const month = moment().tz('Asia/Taipei').format('YYYY-MM');
 
     // check if sheet exists
     let sheet = googleDoc.sheetsByTitle[month];
@@ -116,7 +116,7 @@ async function handleEvent(event) {
       User: user,
       Category: category,
       Amount: amount,
-      CreatedAt: moment().format('YYYY-MM-DD HH:mm:ss')
+      CreatedAt: moment().tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')
     });
   }
 }
