@@ -53,16 +53,16 @@ async function handleEvent(event) {
     // get google doc
     let googleDoc = await getDocInfo(GOOGLE_DOC_ID);
 
-    // get today's sheet
-    const today = moment().format('YYYY-MM-DD');
+    // get month's sheet
+    const month = moment().format('YYYY-MM');
 
     // check if sheet exists
-    let sheet = googleDoc.sheetsByTitle[today];
+    let sheet = googleDoc.sheetsByTitle[month];
 
     // if not, create one
     if (!sheet) {
       const headerValues = ['User', 'Category', 'Amount', 'CreatedAt'];
-      const sheetName = today;
+      const sheetName = month;
       const docId = GOOGLE_DOC_ID;
 
       // create sheet
