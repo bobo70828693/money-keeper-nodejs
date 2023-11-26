@@ -11,12 +11,11 @@ const { LINE_BOT_CHANNEL_SECRET, LINE_BOT_ACCESS_TOKEN, GOOGLE_DOC_ID, DEBUG } =
 const express = require('express');
 const moment = require('moment-timezone');
 const bodyParser = require('body-parser');
+const line = require('@line/bot-sdk'); // line-bot
 
 // services
 const { getDocInfo, createSheet } = require('./services/googleSheet');
 
-// line-bot middleware
-const line = require('@line/bot-sdk');
 
 const app = express();
 // app.use(bodyParser.json()); // !NOTE: for testing only
@@ -71,6 +70,31 @@ async function handleEvent(event) {
 
     // validate message
     const message = event.message.text;
+
+    if (message === '目前花費') {
+      // get sheet rows
+      const rows = await sheet.getRows();
+      const sum = rows.reduce((acc, row) => {
+        return acc + parseInt(row.get('Amount'));
+      }, 0);
+
+      if (DEBUG) {
+        console.log(`DEBUG MODE: The current month's total is $${sum}`);
+        return;
+      }
+
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: `The current month's total is $${sum}`
+          }
+        ]
+      });
+    }
+
+    // Handle the basic event - [user] [category] [amount]
     const messageArr = message.split(' ');
 
     if (messageArr.length !== 3) {
