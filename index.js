@@ -74,12 +74,30 @@ async function handleEvent(event) {
     if (message === '目前花費') {
       // get sheet rows
       const rows = await sheet.getRows();
-      const sum = rows.reduce((acc, row) => {
-        return acc + parseInt(row.get('Amount'));
-      }, 0);
+
+      // calculate sum for each user
+      const resultGroupByUser = {};
+      for (const row of rows) {
+        const [user, category, amount] = row._rawData;
+
+        resultGroupByUser[user] = resultGroupByUser[user] || 0;
+        resultGroupByUser[user] += Number(amount);
+      }
+
+      // print result
+      let index = 0;
+      let textOfSum = 'The expense of current month\'s are as follow: \n';
+      for (const key of Object.keys(resultGroupByUser)) {
+        textOfSum += `${key}: $${resultGroupByUser[key]}`;
+
+        if (Object.keys(resultGroupByUser).length-1 > index) {
+          textOfSum += `\n`;
+        }
+        index ++;
+      }
 
       if (DEBUG) {
-        console.log(`DEBUG MODE: The current month's total is $${sum}`);
+        console.log(textOfSum);
         return;
       }
 
@@ -88,7 +106,7 @@ async function handleEvent(event) {
         messages: [
           {
             type: 'text',
-            text: `The current month's total is $${sum}`
+            text: textOfSum
           }
         ]
       });
