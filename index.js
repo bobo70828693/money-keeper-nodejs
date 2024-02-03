@@ -192,7 +192,7 @@ async function handleEvent(event) {
       let index = 0;
       for (const category of categoryMap) {
         const averagePrice = Math.round(category.expense / category.count);
-        textOfExpenseByCategory += `${category.name}, Average price: $${averagePrice}`;
+        textOfExpenseByCategory += `${category.name}, Average expense per meal: $${averagePrice}`;
         if (categoryMap.length-1 > index) {
           textOfExpenseByCategory += `\n`;
         }
