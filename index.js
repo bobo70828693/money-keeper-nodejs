@@ -167,8 +167,8 @@ async function handleEvent(event) {
         });
       }
 
-      for (let row of expenses) {
-        const [user, description, amount, category] = row._rawData;
+      for (let expense of expenses) {
+        const [user, description, amount, category] = expense._rawData;
 
         // extract category id
         const categoryId = Number(category);
@@ -189,7 +189,7 @@ async function handleEvent(event) {
 
       let index = 0;
       for (const category of categoryMap) {
-        textOfExpenseByCategory += `Name: ${category.name}, Budget balance: ${category.budget}`;
+        textOfExpenseByCategory += `${category.name}, Budget balance: ${category.budget}`;
         if (categoryMap.length-1 > index) {
           textOfExpenseByCategory += `\n`;
         }
