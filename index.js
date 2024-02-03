@@ -167,7 +167,7 @@ async function handleEvent(event) {
         });
       }
 
-      for (let row of rows) {
+      for (let row of expenses) {
         const [user, description, amount, category] = row._rawData;
 
         // extract category id
