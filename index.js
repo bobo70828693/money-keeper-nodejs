@@ -58,6 +58,9 @@ async function handleEvent(event) {
     // check if sheet exists
     let sheet = googleDoc.sheetsByTitle[month];
 
+    // get category sheet
+    const categorySheet = googleDoc.sheetsByTitle['Category'];
+
     // if not, create one
     if (!sheet) {
       const headerValues = ['User', 'Category', 'Amount', 'CreatedAt'];
@@ -78,7 +81,7 @@ async function handleEvent(event) {
       // calculate sum for each user
       const resultGroupByUser = {};
       for (const row of rows) {
-        const [user, category, amount] = row._rawData;
+        const [user, description, amount, category] = row._rawData;
 
         resultGroupByUser[user] = resultGroupByUser[user] || 0;
         resultGroupByUser[user] += Number(amount);
@@ -88,6 +91,11 @@ async function handleEvent(event) {
       let index = 0;
       let textOfSum = 'The expense of current month\'s are as follow: \n';
       for (const key of Object.keys(resultGroupByUser)) {
+        // skip empty user
+        if (key === '') {
+          continue;
+        }
+
         textOfSum += `${key}: $${resultGroupByUser[key]}`;
 
         if (Object.keys(resultGroupByUser).length-1 > index) {
@@ -112,12 +120,100 @@ async function handleEvent(event) {
       });
     }
 
-    // Handle the basic event - [user] [category] [amount]
+    if (message === '目前分類') {
+
+      // get sheet rows
+      const rows = await categorySheet.getRows();
+
+      let textOfCategory = 'The categories are as follow: \n';
+      let index = 0;
+      for(const row of rows) {
+        // category format: [id] [name] [budget]
+        const [id, name, budget] = row._rawData;
+        textOfCategory += `ID: ${id}, Name: ${name}, Budget: ${budget}`;
+        if (rows.length-1 > index) {
+          textOfCategory += `\n`;
+        }
+        index ++;
+      }
+
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: textOfCategory
+          }
+        ]
+      });
+    }
+
+    if (message === '本月餘額') {
+      // get sheet rows
+      const categories = await categorySheet.getRows();
+      // get expense sheet rows
+      const expenses = await sheet.getRows();
+
+      // sort categories by id
+      let categoryMap = [];
+      for (let category of categories) {
+        const [id, name, budget] = category._rawData;
+
+        categoryMap.push({
+          id: Number(id),
+          name,
+          budget,
+          expense: 0
+        });
+      }
+
+      for (let row of rows) {
+        const [user, description, amount, category] = row._rawData;
+
+        // extract category id
+        const categoryId = Number(category);
+
+        const foundCategory = categoryMap.find(c => c.id === categoryId);
+
+        if (!foundCategory) {
+          console.log(`Category not found: ${category}`);
+          continue;
+        }
+
+        foundCategory.expense += Number(amount);
+        foundCategory.budget -= Number(amount);
+      }
+
+      // calculate budget balance
+      let textOfExpenseByCategory = 'Here is your expense by category:\n\n';
+
+      let index = 0;
+      for (const category of categoryMap) {
+        textOfExpenseByCategory += `Name: ${category.name}, Budget balance: ${category.budget}`;
+        if (categoryMap.length-1 > index) {
+          textOfExpenseByCategory += `\n`;
+        }
+        index ++;
+      }
+
+      // only reply in production
+      return client.replyMessage({
+        replyToken: event.replyToken,
+        messages: [
+          {
+            type: 'text',
+            text: textOfExpenseByCategory
+          }
+        ]
+      });
+    }
+
+    // Handle the basic event - [user] [description] [amount] [_category]
     const messageArr = message.split(' ');
 
     if (messageArr.length !== 3) {
       if (DEBUG) {
-        console.log("DEBUG MODE: Invalid message format. Please follow this format: [user] [category] [amount]");
+        console.log("DEBUG MODE: Invalid message format. Please follow this format: [user] [description] [amount] [_category]");
         return;
       }
 
@@ -127,13 +223,13 @@ async function handleEvent(event) {
         messages: [
           {
             type: 'text',
-            text: 'Invalid message format. Please follow this format: [user] [category] [amount]'
+            text: 'Invalid message format. Please follow this format: [user] [description] [amount] [_category]'
           }
         ]
       });
     }
 
-    const [user, category, amount] = messageArr;
+    const [user, description, amount, category] = messageArr;
 
     // validate amount
     if (isNaN(amount)) {
@@ -156,9 +252,10 @@ async function handleEvent(event) {
     // add row
     await sheet.addRow({
       User: user,
-      Category: category,
+      Description: description,
+      Category: category || null,
       Amount: amount,
-      CreatedAt: moment().tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss')
+      CreatedAt: moment().tz('Asia/Taipei').format('YYYY-MM-DD HH:mm:ss'),
     });
   }
 }
