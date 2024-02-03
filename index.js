@@ -163,7 +163,8 @@ async function handleEvent(event) {
           id: Number(id),
           name,
           budget,
-          expense: 0
+          expense: 0,
+          count: 0,
         });
       }
 
@@ -182,6 +183,7 @@ async function handleEvent(event) {
 
         foundCategory.expense += Number(amount);
         foundCategory.budget -= Number(amount);
+        foundCategory.count ++;
       }
 
       // calculate budget balance
@@ -189,7 +191,8 @@ async function handleEvent(event) {
 
       let index = 0;
       for (const category of categoryMap) {
-        textOfExpenseByCategory += `${category.name}, Budget balance: ${category.budget}`;
+        const averagePrice = Math.round(category.expense / category.count);
+        textOfExpenseByCategory += `${category.name}, Average price: $${averagePrice}`;
         if (categoryMap.length-1 > index) {
           textOfExpenseByCategory += `\n`;
         }
