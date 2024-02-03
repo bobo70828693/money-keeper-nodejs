@@ -211,7 +211,7 @@ async function handleEvent(event) {
     // Handle the basic event - [user] [description] [amount] [_category]
     const messageArr = message.split(' ');
 
-    if (messageArr.length !== 3) {
+    if (messageArr.length < 3) {
       if (DEBUG) {
         console.log("DEBUG MODE: Invalid message format. Please follow this format: [user] [description] [amount] [_category]");
         return;
